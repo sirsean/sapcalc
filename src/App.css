@@ -1,0 +1,37 @@
+@font-face {
+  font-family: 'Druk wide';
+  src: url('https://uploads-ssl.webflow.com/6344053cfeeda3ced2e92ead/63440d8afeeda30f12e97d21_Druk-Wide-Medium.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  font-family: 'Druk wide', sans-serif;
+  color: rgb(229, 227, 212);
+}
+
+.box {
+  margin: 1.5rem;
+  padding: 1rem;
+  border: 1px solid white;
+  border-radius: 8px;
+}
+
+h2 {
+  color: #e4edab;
+}
+
+th {
+  text-align: right;
+  font-size: 1.2em;
+  color: #e4edab;
+}
+
+td {
+  text-align: right;
+}
