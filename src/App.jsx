@@ -5,6 +5,8 @@ import { mainnet } from 'wagmi/chains'
 import { useState, useContext, createContext } from 'react';
 import DrifterABI from '../abi/DrifterABI.js';
 import LootCardABI from '../abi/LootCardABI.js';
+import { numDriftersToSapCans } from './drifters.js';
+import { LootCardBalance, LOOT_CARDS, sumSapMax, sumSapSafe } from './loot_cards.js'
 import { useStore } from './store';
 import './App.css';
 
@@ -21,94 +23,6 @@ const wagmiConfig = createConfig({
   publicClient
 })
 const ethereumClient = new EthereumClient(wagmiConfig, chains)
-
-function drifterBonus(balance) {
-  if (balance >= 100n) {
-      return 130n;
-  } else if (balance >= 50n) {
-      return 60n;
-  } else if (balance >= 35n) {
-      return 38n;
-  } else if (balance >= 20n) {
-      return 20n;
-  } else if (balance >= 10n) {
-      return 9n;
-  } else if (balance >= 5n) {
-      return 4n;
-  } else if (balance >= 3n) {
-      return 2n;
-  } else {
-      return 0n;
-  }
-}
-
-class LootCard {
-  constructor(tokenId, name, sap) {
-    this.tokenId = tokenId;
-    this.name = name;
-    this.sap = BigInt(sap);
-  }
-
-  sapMax(balance) {
-    return balance * this.sap;
-  }
-
-  sapSafe(balance) {
-    if (balance > 1n) {
-      const safeBalance = balance - 1n;
-      return safeBalance * this.sap;
-    } else {
-      return 0n;
-    }
-  }
-}
-
-class LootCardBalance extends LootCard {
-  constructor(lootCard, balance) {
-    super(lootCard.tokenId, lootCard.name, lootCard.sap);
-    this.balance = balance;
-  }
-
-  get sapMax() {
-    return this.balance * this.sap;
-  }
-
-  get sapSafe() {
-    if (this.balance > 1n) {
-      return (this.balance - 1n) * this.sap;
-    } else {
-      return 0n;
-    }
-  }
-}
-
-const LOOT_CARDS = [
-  new LootCard(1, 'Hivver', 3),
-  new LootCard(2, 'Blybold', 2),
-  new LootCard(3, 'Dozegrass', 1),
-  new LootCard(4, 'Scableaf', 1),
-  new LootCard(5, 'Skrit', 9),
-  new LootCard(6, 'Juicebox', 1),
-  new LootCard(7, 'Rare Skull', 539),
-  new LootCard(8, 'Linno Beetle', 539),
-  new LootCard(9, 'Ommonite', 3),
-  new LootCard(10, 'Augurbox', 539),
-  new LootCard(11, 'Pelgrejo', 9),
-  new LootCard(12, 'Ranch Milk', 14),
-  new LootCard(13, 'Brember', 8),
-  new LootCard(14, 'Astersilk', 1),
-  new LootCard(15, 'Yum Nubs', 1),
-  new LootCard(16, 'Ferqun', 1),
-  new LootCard(17, 'Gastropod', 1),
-  new LootCard(18, 'Ivory Tar', 1),
-  new LootCard(19, 'Flux', 4),
-  new LootCard(20, 'Murk Ring', 6),
-  new LootCard(21, 'SUIT COAG', 6),
-];
-
-function numDriftersToSapCans(numDrifters) {
-  return (numDrifters * 5n) + drifterBonus(numDrifters);
-}
 
 function Drifters() {
   const [ _, dispatch ] = useStore();
@@ -160,9 +74,10 @@ function LootCardView({ lootCard }) {
       dispatch('SET_LOOT_CARD_BALANCE', lootCardBalance);
     },
   })
+  const href = `https://opensea.io/assets/ethereum/${LOOT_CARD_ADDRESS}/${balance?.tokenId}`;
   return (
     <tr>
-      <td>{lootCard.name}</td>
+      <td><a target="_blank" href={href}>{lootCard.name}</a></td>
       <td>{balance?.balance.toString()}</td>
       <td>{balance?.sapMax.toString()}</td>
       <td>{balance?.sapSafe.toString()}</td>
@@ -172,8 +87,8 @@ function LootCardView({ lootCard }) {
 
 function LootCards() {
   const [ state, _ ] = useStore();
-  const lootCardSapMax = Object.values(state.lootCardBalances).map(b => b.sapMax).reduce((a, b) => a+b, 0n);
-  const lootCardSapSafe = Object.values(state.lootCardBalances).map(b => b.sapSafe).reduce((a, b) => a+b, 0n);
+  const lootCardSapMax = sumSapMax(Object.values(state.lootCardBalances));
+  const lootCardSapSafe = sumSapSafe(Object.values(state.lootCardBalances));
   return (
     <div className="box">
       <h2>Loot Cards</h2>
@@ -203,8 +118,8 @@ function LootCards() {
 function Totals() {
   const [ state, _ ] = useStore();
   const drifterSap = numDriftersToSapCans(state.drifterBalance);
-  const lootCardSapMax = Object.values(state.lootCardBalances).map(b => b.sapMax).reduce((a, b) => a+b, 0n);
-  const lootCardSapSafe = Object.values(state.lootCardBalances).map(b => b.sapSafe).reduce((a, b) => a+b, 0n);
+  const lootCardSapMax = sumSapMax(Object.values(state.lootCardBalances));
+  const lootCardSapSafe = sumSapSafe(Object.values(state.lootCardBalances));
   const maxSap = drifterSap + lootCardSapMax;
   const safeSap = drifterSap + lootCardSapSafe;
   return (
