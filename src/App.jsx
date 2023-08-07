@@ -9,6 +9,7 @@ import DrifterABI from '../abi/DrifterABI.js';
 import LootCardABI from '../abi/LootCardABI.js';
 import { numDriftersToSapCans } from './drifters.js';
 import { LootCardBalance, LOOT_CARDS, sumSapMax, sumSapSafe } from './loot_cards.js'
+import { SHIPS } from './ships.js';
 import { useStore } from './store';
 import './App.css';
 
@@ -91,10 +92,22 @@ function LootCardView({ lootCard }) {
   )
 }
 
-function LootCards() {
-  const [ state, _ ] = useStore();
+function calculateSap(state) {
+  const drifterSap = numDriftersToSapCans(state.drifterBalance);
   const lootCardSapMax = sumSapMax(Object.values(state.lootCardBalances));
   const lootCardSapSafe = sumSapSafe(Object.values(state.lootCardBalances));
+  return {
+    drifterSap,
+    lootCardSapMax,
+    lootCardSapSafe,
+    maxSap: drifterSap + lootCardSapMax,
+    safeSap: drifterSap + lootCardSapSafe,
+  }
+}
+
+function LootCards() {
+  const [ state, _ ] = useStore();
+  const { lootCardSapMax, lootCardSapSafe } = calculateSap(state);
   return (
     <div className="box">
       <h2>Loot Cards</h2>
@@ -123,11 +136,7 @@ function LootCards() {
 
 function Totals() {
   const [ state, _ ] = useStore();
-  const drifterSap = numDriftersToSapCans(state.drifterBalance);
-  const lootCardSapMax = sumSapMax(Object.values(state.lootCardBalances));
-  const lootCardSapSafe = sumSapSafe(Object.values(state.lootCardBalances));
-  const maxSap = drifterSap + lootCardSapMax;
-  const safeSap = drifterSap + lootCardSapSafe;
+  const { maxSap, safeSap } = calculateSap(state);
   return (
     <div className="box">
       <h2>Totals</h2>
@@ -141,6 +150,30 @@ function Totals() {
             <th>Safe SAP Cans</th>
             <td>{safeSap.toString()}</td>
           </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function Ships() {
+  const [ state, _ ] = useStore();
+  const { maxSap, safeSap } = calculateSap(state);
+  const allShips = SHIPS.filter(({ cost }) => cost <= maxSap);
+  const safeShipNames = new Set(SHIPS.filter(({ cost }) => cost <= safeSap).map(s => s.name));
+  return (
+    <div className="box">
+      <h2>Ships</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Ship</th>
+            <th>Cost</th>
+            <th>Safe?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {allShips.map(s => <tr key={s.name}><td>{s.name}</td><td>{s.cost}</td><td>{safeShipNames.has(s.name) ? "✔️" : ""}</td></tr>)}
         </tbody>
       </table>
     </div>
@@ -188,6 +221,7 @@ function HomePage() {
       {isConnected && <>
         <AddressForm />
         <Totals />
+        <Ships />
         <Drifters />
         <LootCards />
       </>}
