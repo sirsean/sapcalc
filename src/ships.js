@@ -17,7 +17,7 @@ export const SHIPS = [
     ["Longbow Quad", 60],
     ["Rackworm", 50],
     ["Rackworm + Battering Ram", 70],
-    ["Rackwork + Laser", 80],
+    ["Rackworm + Laser", 80],
     ["MHC-DS Spigot", 100],
     ["MHC-DS Chop-Hauler", 130],
     ["MHC-DS Harridan", 175],
