@@ -35,3 +35,11 @@ th {
 td {
   text-align: right;
 }
+
+input {
+  width: 100%;
+  font-size: 1.5em;
+  outline: none;
+  padding: 0.4em;
+  margin-top: 0.4em;
+}

@@ -2,7 +2,9 @@ import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum'
 import { Web3Modal, Web3Button } from '@web3modal/react'
 import { configureChains, createConfig, WagmiConfig, useAccount, useContractRead } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-import { useState, useContext, createContext } from 'react';
+import { createPublicClient, http } from 'viem';
+import { normalize } from 'viem/ens';
+import { useState } from 'react';
 import DrifterABI from '../abi/DrifterABI.js';
 import LootCardABI from '../abi/LootCardABI.js';
 import { numDriftersToSapCans } from './drifters.js';
@@ -16,6 +18,10 @@ const projectId = '1e7bdc454bbc86a76b3a0477cacf9999'
 const DRIFTER_ADDRESS = '0xe3B399AAb015D2C0D787ECAd40410D88f4f4cA50';
 const LOOT_CARD_ADDRESS = '0x39F8166484486c3b72C5c58c468A016D036E1a02';
 
+const ensClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+})
 const { publicClient } = configureChains(chains, [w3mProvider({ projectId })])
 const wagmiConfig = createConfig({
   autoConnect: true,
@@ -25,14 +31,14 @@ const wagmiConfig = createConfig({
 const ethereumClient = new EthereumClient(wagmiConfig, chains)
 
 function Drifters() {
-  const [ _, dispatch ] = useStore();
-  const [ numDrifters, setNumDrifters ] = useState(null);
   const { address } = useAccount();
+  const [ state, dispatch ] = useStore();
+  const [ numDrifters, setNumDrifters ] = useState(null);
   useContractRead({
     address: DRIFTER_ADDRESS,
     abi: DrifterABI,
     functionName: 'balanceOf',
-    args: [address],
+    args: [state.addressOverride || address],
     onSuccess(data) {
       setNumDrifters(data);
       dispatch('SET_DRIFTER_BALANCE', data);
@@ -60,14 +66,14 @@ function Drifters() {
 }
 
 function LootCardView({ lootCard }) {
-  const [ _, dispatch ] = useStore();
-  const [ balance, setBalance ] = useState(null);
   const { address } = useAccount();
+  const [ state, dispatch ] = useStore();
+  const [ balance, setBalance ] = useState(null);
   useContractRead({
     address: LOOT_CARD_ADDRESS,
     abi: LootCardABI,
     functionName: 'balanceOf',
-    args: [address, lootCard.tokenId],
+    args: [state.addressOverride || address, lootCard.tokenId],
     onSuccess(data) {
       const lootCardBalance = new LootCardBalance(lootCard, data);
       setBalance(lootCardBalance);
@@ -141,12 +147,46 @@ function Totals() {
   )
 }
 
+function isAddress(address) {
+  // Check if the string is a valid Ethereum address
+  return /^0x[0-9a-fA-F]{40}$/.test(address);
+}
+
+function isENSName(name) {
+  // Check if the string is a valid ENS name
+  return /^[a-z0-9\.]{1,63}$/.test(name);
+}
+
+function AddressForm() {
+  const [ _, dispatch ] = useStore();
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    const value = e.target.children.address.value;
+    if (isAddress(value)) {
+      dispatch('SET_ADDRESS_OVERRIDE', value);
+    } else if (isENSName(value)) {
+      const addr = await ensClient.getEnsAddress({
+        name: normalize(value),
+      })
+      dispatch('SET_ADDRESS_OVERRIDE', addr);
+    } else {
+      dispatch('SET_ADDRESS_OVERRIDE', null);
+    }
+  }
+  return (
+    <form onSubmit={onSubmit}>
+      <input type="text" name="address" placeholder="Search..." />
+    </form>
+  )
+}
+
 function HomePage() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   return (
     <>
       <Web3Button />
       {isConnected && <>
+        <AddressForm />
         <Totals />
         <Drifters />
         <LootCards />

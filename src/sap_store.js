@@ -2,6 +2,10 @@ import { initStore } from './store';
 
 export const configureStore = () => {
     const actions = {
+        SET_ADDRESS_OVERRIDE: (state, addressOverride) => {
+            state.addressOverride = addressOverride;
+            return state;
+        },
         SET_DRIFTER_BALANCE: (state, drifterBalance) => {
             state.drifterBalance = drifterBalance;
             return state;
@@ -13,6 +17,7 @@ export const configureStore = () => {
     };
 
     initStore(actions, {
+        addressOverride: null,
         drifterBalance: 0n,
         lootCardBalances: {},
     })
