@@ -68,4 +68,6 @@ export const LOOT_CARDS = [
   new LootCard(19, 'Flux', 4),
   new LootCard(20, 'Murk Ring', 6),
   new LootCard(21, 'SUIT COAG', 6),
+  new LootCard(22, 'Blackfish', 0),
+  new LootCard(23, 'Wirecutters', 0),
 ];
