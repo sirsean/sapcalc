@@ -7,6 +7,7 @@ import { normalize } from 'viem/ens';
 import { useState } from 'react';
 import DrifterABI from '../abi/DrifterABI.js';
 import LootCardABI from '../abi/LootCardABI.js';
+import SapCanABI from '../abi/SapCanABI.js';
 import { numDriftersToSapCans } from './drifters.js';
 import { LootCardBalance, LOOT_CARDS, sumSapMax, sumSapSafe } from './loot_cards.js'
 import { SHIPS } from './ships.js';
@@ -18,6 +19,7 @@ const projectId = '1e7bdc454bbc86a76b3a0477cacf9999'
 
 const DRIFTER_ADDRESS = '0xe3B399AAb015D2C0D787ECAd40410D88f4f4cA50';
 const LOOT_CARD_ADDRESS = '0x39F8166484486c3b72C5c58c468A016D036E1a02';
+const SAP_CAN_ADDRESS = '0xbB27281Ce6A780A5bD99253f37D1b2eA18b4d578';
 
 const ensClient = createPublicClient({
   chain: mainnet,
@@ -135,13 +137,28 @@ function LootCards() {
 }
 
 function Totals() {
+  const { address } = useAccount();
   const [ state, _ ] = useStore();
   const { maxSap, safeSap } = calculateSap(state);
+  const [ sapBalance, setSapBalance ] = useState(null);
+  useContractRead({
+    address: SAP_CAN_ADDRESS,
+    abi: SapCanABI,
+    functionName: 'balanceOf',
+    args: [state.addressOverride || address, 1],
+    onSuccess(data) {
+      setSapBalance(data);
+    },
+  })
   return (
     <div className="box">
       <h2>Totals</h2>
       <table>
         <tbody>
+          <tr>
+            <th>Current SAP Cans</th>
+            <td>{(sapBalance || 0).toString()}</td>
+          </tr>
           <tr>
             <th>Max SAP Cans</th>
             <td>{maxSap.toString()}</td>
