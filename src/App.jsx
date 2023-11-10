@@ -8,7 +8,6 @@ import { useState } from 'react';
 import DrifterABI from '../abi/DrifterABI.js';
 import LootCardABI from '../abi/LootCardABI.js';
 import SapCanABI from '../abi/SapCanABI.js';
-import { numDriftersToSapCans } from './drifters.js';
 import { LootCardBalance, LOOT_CARDS, sumSapMax, sumSapSafe } from './loot_cards.js'
 import { SHIPS } from './ships.js';
 import { useStore } from './store';
@@ -32,41 +31,6 @@ const wagmiConfig = createConfig({
   publicClient
 })
 const ethereumClient = new EthereumClient(wagmiConfig, chains)
-
-function Drifters() {
-  const { address } = useAccount();
-  const [ state, dispatch ] = useStore();
-  const [ numDrifters, setNumDrifters ] = useState(null);
-  useContractRead({
-    address: DRIFTER_ADDRESS,
-    abi: DrifterABI,
-    functionName: 'balanceOf',
-    args: [state.addressOverride || address],
-    onSuccess(data) {
-      setNumDrifters(data);
-      dispatch('SET_DRIFTER_BALANCE', data);
-    },
-  })
-  if (numDrifters) {
-    return (
-      <div className="box">
-        <h2>Drifters</h2>
-        <table>
-          <tbody>
-            <tr>
-              <th>Drifters</th>
-              <td>{numDrifters.toString()}</td>
-            </tr>
-            <tr>
-              <th>SAP Cans</th>
-              <td>{numDriftersToSapCans(numDrifters).toString()}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-}
 
 function LootCardView({ lootCard }) {
   const { address } = useAccount();
@@ -95,15 +59,13 @@ function LootCardView({ lootCard }) {
 }
 
 function calculateSap(state) {
-  const drifterSap = numDriftersToSapCans(state.drifterBalance);
   const lootCardSapMax = sumSapMax(Object.values(state.lootCardBalances));
   const lootCardSapSafe = sumSapSafe(Object.values(state.lootCardBalances));
   return {
-    drifterSap,
     lootCardSapMax,
     lootCardSapSafe,
-    maxSap: drifterSap + lootCardSapMax,
-    safeSap: drifterSap + lootCardSapSafe,
+    maxSap: lootCardSapMax,
+    safeSap: lootCardSapSafe,
   }
 }
 
@@ -239,7 +201,6 @@ function HomePage() {
         <AddressForm />
         <Totals />
         <Ships />
-        <Drifters />
         <LootCards />
       </>}
       {!isConnected && <>
